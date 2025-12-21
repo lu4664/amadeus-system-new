@@ -1,4 +1,4 @@
-import styles from './index.module.less'
+import styles from './index.module.css'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import ParticleBackground from './components/ParticleBackground'
