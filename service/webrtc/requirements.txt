@@ -9,5 +9,5 @@ litellm
 humaware-vad
 
 # ✅ 关键：固定 fastrtc + gradio 版本，避免依赖飘导致启动崩溃
-gradio>=5.0,<6.0
+gradio==5.50.0
 fastrtc[vad,stt,tts]==0.0.34
