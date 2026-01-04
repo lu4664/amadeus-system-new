@@ -538,3 +538,6 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
     logging.info(f"启动服务器，监听 0.0.0.0:{port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+
+#11
