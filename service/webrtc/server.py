@@ -179,24 +179,19 @@ TURN_URL = os.getenv("TURN_URL", "")
 TURN_USERNAME = os.getenv("TURN_USERNAME", "")
 TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
 
-# 构造 iceServers
+# 针对国内网络环境优化的 ICE 配置
 ice_servers = [
-    {"urls": "stun:stun.l.google.com:19302"},  # 免费 STUN
+    {
+        # 使用腾讯云的 STUN 服务器（国内速度快，无墙）
+        "urls": ["stun:stun.qq.com:3478"]
+    },
+    {
+        # 备用：小米的 STUN 服务器
+        "urls": ["stun:stun.miwifi.com:3478"]
+    }
 ]
 
-# 如果配置了 TURN，则添加
-if TURN_URL and TURN_USERNAME and TURN_CREDENTIAL:
-    # 支持多个TURN URL（用逗号分隔）
-    turn_urls = [url.strip() for url in TURN_URL.split(',')]
-    
-    ice_servers.append({
-        "urls": turn_urls,
-        "username": TURN_USERNAME,
-        "credential": TURN_CREDENTIAL
-    })
-    logging.info(f"✅ TURN 服务器已配置: {turn_urls}")
-else:
-    logging.warning("⚠️ 未配置 TURN 服务器，某些网络环境可能无法连接")
+logging.info(f"🌏 使用国内优化的 STUN 配置")
 
 WEBRTC_API_URL = os.getenv("WEBRTC_API_URL", "http://localhost:8080")
 # 先定义 rtc_configuration
