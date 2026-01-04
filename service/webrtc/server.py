@@ -179,15 +179,16 @@ TURN_URL = os.getenv("TURN_URL", "")
 TURN_USERNAME = os.getenv("TURN_USERNAME", "")
 TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
 
-# 针对国内网络环境优化的 ICE 配置
 ice_servers = [
+    # 1. 尝试国内 STUN (虽然刚才失败了，但保留作为轻量级尝试)
     {
-        # 使用腾讯云的 STUN 服务器（国内速度快，无墙）
         "urls": ["stun:stun.qq.com:3478"]
     },
+    # 2. 关键：加回 Metered TURN 服务器 (作为保底的中继通道)
     {
-        # 备用：小米的 STUN 服务器
-        "urls": ["stun:stun.miwifi.com:3478"]
+        "urls": ["turns:a.relay.metered.ca:443?transport=tcp"], # 强制走 TCP 443 端口，模仿网页流量，最容易穿透防火墙
+        "username": "34ac8b974b63014894208ccc",
+        "credential": "KRpAZHk9rdRRV61f"
     }
 ]
 
