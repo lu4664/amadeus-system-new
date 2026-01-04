@@ -19,38 +19,53 @@ load_dotenv()
 DEFAULT_SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 DEFAULT_SILICONFLOW_VOICE = os.getenv("SILICONFLOW_VOICE", "speech:siliconflow-kurisu:clzv7bjjm041fufyct2z0setm:mphrsbbmvrjfophbsted")
 
-# 从环境变量获取OpenAI API密钥
-LLM_BASE_URL = os.getenv("LLM_BASE_URL")
-LLM_API_KEY = os.getenv("LLM_API_KEY")
+# ✅ 延迟初始化客户端（避免 crash）
+_client_cache = None
 
-# 创建OpenAI客户端
-client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+def get_translation_client():
+    """
+    获取或创建翻译客户端（延迟初始化）
+    """
+    global _client_cache
+    
+    if _client_cache is not None:
+        return _client_cache
+    
+    LLM_BASE_URL = os.getenv("LLM_BASE_URL")
+    LLM_API_KEY = os.getenv("LLM_API_KEY")
+    
+    if not LLM_API_KEY or not LLM_BASE_URL:
+        logging.warning("LLM credentials not configured, translation disabled")
+        return None
+    
+    try:
+        _client_cache = OpenAI(
+            api_key=LLM_API_KEY,
+            base_url=LLM_BASE_URL
+        )
+        logging.info(f"Translation client initialized successfully")
+        return _client_cache
+    except Exception as e:
+        logging.error(f"Failed to create OpenAI client: {e}")
+        return None
 
 # 创建一个模块级别的线程池用于翻译任务
 _translate_pool = ThreadPoolExecutor(max_workers=2)
 
 def translate_text(text, target_language, source_language='zh'):
     """
-    使用OpenAI的GPT-4.1-nano模型将文本从源语言翻译到目标语言
-    
-    参数:
-        text (str): 要翻译的文本
-        target_language (str): 目标语言代码
-        source_language (str): 源语言代码，默认为'zh'
-        
-    返回:
-        str: 翻译后的文本，如果翻译失败则返回原文本
+    使用 Qwen3-next-80b 将文本从源语言翻译到目标语言
     """
     if not text or not text.strip():
         return text
     
-    # 检查API密钥是否有效
-    if not LLM_API_KEY:
-        logging.error("缺少OpenAI API密钥，无法进行文本翻译")
+    # 获取客户端
+    client = get_translation_client()
+    if not client:
+        logging.warning("翻译客户端不可用，返回原文")
         return text
     
     try:
-        # 构建语言名称映射
         language_map = {
             'zh': '中文',
             'en': '英语',
@@ -60,27 +75,30 @@ def translate_text(text, target_language, source_language='zh'):
         source_lang_name = language_map.get(source_language, source_language)
         target_lang_name = language_map.get(target_language, target_language)
         
-        # 构建翻译提示
-        system_prompt = f'你是一个专业的翻译助手，负责将{source_lang_name}翻译成{target_lang_name}。请直接提供翻译结果，不要添加任何解释或额外内容。'
-        user_prompt = f"请将以下{source_lang_name}文本翻译成{target_lang_name}，只返回翻译结果，不要添加任何解释或额外内容：\n\n{text}"
+        # ✅ 使用环境变量中的模型（Qwen）
+        model = os.getenv("AI_MODEL", "qwen3-next-80b-a3b-instruct")
         
-        # 使用OpenAI SDK发送请求
+        system_prompt = f'你是一个专业的翻译助手，负责将{source_lang_name}翻译成{target_lang_name}。请直接提供翻译结果，不要添加任何解释或额外内容。'
+        user_prompt = f"请将以下{source_lang_name}文本翻译成{target_lang_name}，只返回翻译结果：\n\n{text}"
+        
         response = client.chat.completions.create(
-            model="gpt-4.1-nano",
+            model=model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.3  # 使用较低的温度以获得更确定性的翻译
+            temperature=0.3,
+            max_tokens=500
         )
         
-        # 获取翻译结果
         translated_text = response.choices[0].message.content.strip()
-        logging.info(f"文本翻译成功: {text[:30]}... -> {translated_text[:30]}...")
+        logging.info(f"翻译成功: {text[:30]}... -> {translated_text[:30]}...")
         return translated_text
     except Exception as e:
-        logging.error(f"使用OpenAI SDK进行翻译时出错: {e}")
+        logging.error(f"翻译出错: {e}")
         return text
+
+# text_to_speech_stream 函数保持不变...
 
 def text_to_speech_stream(text, voice=None, sample_rate=32000, api_key=None):
     """

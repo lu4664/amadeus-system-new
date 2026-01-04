@@ -1,8 +1,7 @@
 FROM python:3.12-slim
-
-
+# 安装系统依赖（包含 CA 证书）
 RUN apt-get update && \
-    apt-get install -y build-essential pkg-config clang git ffmpeg && \
+    apt-get install -y ca-certificates build-essential pkg-config clang git ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -14,5 +13,5 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-EXPOSE 8001
+EXPOSE 8080
 CMD ["python", "server.py"]

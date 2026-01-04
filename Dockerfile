@@ -16,10 +16,12 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
 COPY service/package.json service/pnpm-lock.yaml* ./service/
 
-# 安装依赖 - 前端和后端依赖分开安装
-RUN npm install --registry=https://registry.npmmirror.com --verbose && \
+# --- 修改开始 ---
+# 使用 pnpm 安装根目录依赖，保持与 pnpm-lock.yaml 一致
+RUN pnpm install --registry=https://registry.npmmirror.com && \
     cd service && pnpm install --registry=https://registry.npmmirror.com && \
     cd ..
+# --- 修改结束 ---
 
 # 复制源代码
 COPY . .

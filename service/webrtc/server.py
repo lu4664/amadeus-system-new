@@ -5,6 +5,9 @@ from fastrtc import ReplyOnPause, Stream, AdditionalOutputs, audio_to_bytes  # �
 import logging  # 用于记录日志
 import time  # 用于计时和时间相关操作
 import gradio as gr
+# 设置日志级别，让 aiortc/aioice 吐出连接细节
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("aioice").setLevel(logging.DEBUG)
 from fastapi.middleware.cors import CORSMiddleware  # 用于处理跨域请求
 import numpy as np  # 用于数值计算和数组操作
 import io  # 用于处理输入输出流
@@ -170,15 +173,46 @@ def get_user_mem0_config(webrtc_id: str):
     }
 
 logging.basicConfig(level=logging.INFO)
+
+# ✅ 优先从环境变量读取 TURN 配置
+TURN_URL = os.getenv("TURN_URL", "")
+TURN_USERNAME = os.getenv("TURN_USERNAME", "")
+TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
+
+# 构造 iceServers
+ice_servers = [
+    {"urls": "stun:stun.l.google.com:19302"},  # 免费 STUN
+]
+
+# 如果配置了 TURN，则添加
+if TURN_URL and TURN_USERNAME and TURN_CREDENTIAL:
+    # 支持多个TURN URL（用逗号分隔）
+    turn_urls = [url.strip() for url in TURN_URL.split(',')]
+    
+    ice_servers.append({
+        "urls": turn_urls,
+        "username": TURN_USERNAME,
+        "credential": TURN_CREDENTIAL
+    })
+    logging.info(f"✅ TURN 服务器已配置: {turn_urls}")
+else:
+    logging.warning("⚠️ 未配置 TURN 服务器，某些网络环境可能无法连接")
+
+WEBRTC_API_URL = os.getenv("WEBRTC_API_URL", "http://localhost:8080")
+# 先定义 rtc_configuration
 rtc_configuration = {
-    "iceServers": [
-        {
-            "urls": "turn:43.160.205.75:80",
-            "username": "okabe",
-            "credential": "elpsycongroo"
-        },
-    ]
+    "iceServers": ice_servers
 }
+
+# 然后再输出调试信息
+logging.info(f"🔍 TURN配置调试:")
+logging.info(f"  TURN_URL: {TURN_URL}")
+logging.info(f"  TURN_USERNAME: {TURN_USERNAME}")
+logging.info(f"  TURN_CREDENTIAL: {'***' if TURN_CREDENTIAL else '(空)'}")
+logging.info(f"  最终ICE配置: {json.dumps(rtc_configuration, indent=2)}")
+
+
+
 
 def start_up(webrtc_id):
     logging.info(f"用户 {webrtc_id} 开始函数已执行")
@@ -500,5 +534,7 @@ app.include_router(router)
 # 添加主函数，当脚本直接运行时启动uvicorn服务器
 if __name__ == "__main__":
     import uvicorn
-    logging.info("启动服务器，监听 0.0.0.0:8001")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    # 优先读取环境变量 PORT，如果没有则默认 8080
+    port = int(os.getenv("PORT", 8080))
+    logging.info(f"启动服务器，监听 0.0.0.0:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
