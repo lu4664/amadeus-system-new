@@ -179,18 +179,17 @@ TURN_URL = os.getenv("TURN_URL", "")
 TURN_USERNAME = os.getenv("TURN_USERNAME", "")
 TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
 
+# 第182-193行替换为：
 ice_servers = [
-    # 1. 尝试国内 STUN (虽然刚才失败了，但保留作为轻量级尝试)
     {
-        "urls": ["stun:stun.qq.com:3478"]
-    },
-    # 2. 关键：加回 Metered TURN 服务器 (作为保底的中继通道)
-    {
-        "urls": ["turns:a.relay.metered.ca:443?transport=tcp"], # 强制走 TCP 443 端口，模仿网页流量，最容易穿透防火墙
-        "username": "34ac8b974b63014894208ccc",
-        "credential": "KRpAZHk9rdRRV61f"
+        # 强制 TURN over TCP - 最稳定的方案
+        "urls": ["turns:a.relay.metered.ca:443?transport=tcp"],
+        "username": os.getenv("TURN_USERNAME", ""),  # ⚠️ 改用环境变量！
+        "credential": os.getenv("TURN_CREDENTIAL", "")
     }
 ]
+
+logging.info(f"🔒 使用纯 TURN over TCP 模式（最稳定）")
 
 logging.info(f"🌏 使用国内优化的 STUN 配置")
 
