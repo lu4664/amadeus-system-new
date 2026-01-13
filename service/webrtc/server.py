@@ -181,26 +181,23 @@ TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
 
 # 第182-193行替换为：
 ice_servers = [
-    # 公共 STUN 服务器（用于 NAT 穿透） - 对大多数网络环境已足够
+    # Google STUN
     {
         "urls": [
             "stun:stun.l.google.com:19302",
-            "stun:stun1.l.google.com:19302",
-            "stun:stun2.l.google.com:19302",
-            "stun:stun3.l.google.com:19302"
+            "stun:stun1.l.google.com:19302"
         ]
     },
-    # 如果以后需要TURN，可以使用其他免费TURN服务
-    # 暂时注释掉有问题的Metered TURN服务器
-    # {
-    #     "urls": [
-    #         "turns:a.relay.metered.ca:443?transport=tcp",
-    #         "turn:a.relay.metered.ca:80?transport=tcp",
-    #         "turn:a.relay.metered.ca:3478"
-    #     ],
-    #     "username": os.getenv("TURN_USERNAME", ""),
-    #     "credential": os.getenv("TURN_CREDENTIAL", "")
-    # }
+    # 使用 Open Relay Project 的免费 TURN 服务器
+    {
+        "urls": [
+            "turn:openrelay.metered.ca:80",
+            "turn:openrelay.metered.ca:443",
+            "turn:openrelay.metered.ca:443?transport=tcp"
+        ],
+        "username": "openrelayproject",
+        "credential": "openrelayproject"
+    }
 ]
 
 logging.info(f"🔒 使用纯 TURN over TCP 模式（最稳定）")
