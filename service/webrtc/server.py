@@ -181,10 +181,21 @@ TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
 
 # 第182-193行替换为：
 ice_servers = [
+    # 公共 STUN 服务器（用于 NAT 穿透）
     {
-        # 强制 TURN over TCP - 最稳定的方案
-        "urls": ["turns:a.relay.metered.ca:443?transport=tcp"],
-        "username": os.getenv("TURN_USERNAME", ""),  # ⚠️ 改用环境变量！
+        "urls": [
+            "stun:stun.l.google.com:19302",
+            "stun:stun1.l.google.com:19302"
+        ]
+    },
+    # 您的 Metered TURN 服务器（多种传输方式）
+    {
+        "urls": [
+            "turns:a.relay.metered.ca:443?transport=tcp",
+            "turn:a.relay.metered.ca:80?transport=tcp",
+            "turn:a.relay.metered.ca:3478"
+        ],
+        "username": os.getenv("TURN_USERNAME", ""),
         "credential": os.getenv("TURN_CREDENTIAL", "")
     }
 ]
