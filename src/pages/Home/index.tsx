@@ -28,7 +28,7 @@ interface ChatMessage {
 }
 
 // 使用API前缀，将请求通过Node服务转发
-export const API_BASE_URL = "https://ability-higher-prove-reflection.trycloudflare.com";
+export const API_BASE_URL = "https://far-present-satin-amongst.trycloudflare.com";
 
 /**
  * 语音助手组件
